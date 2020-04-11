@@ -46,9 +46,6 @@ def fitness(path, cities):
 
     return 1/fitness #Get the inverse since GA is a maximization alg.
 
-
-
-
         
         
 
