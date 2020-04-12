@@ -39,6 +39,7 @@ class TSP:
             for i in range(n):
                 self.cities.append(City(ran(), ran())) #Append a new city with a random location
 
+
 def fitness(path, cities):
     fitness = 0.0
     for i in range(1, len(path)):
@@ -82,6 +83,19 @@ def selection(fitnesses, numSelected, maxits=100):
     for i in range(len(picked)):
         picked[i] = fitnessCopy.index(picked[i])
     
+    return picked
+
+def selectfirst(fitnesses, numSelected, desc=False):
+    fitnessCopy = deepcopy(fitnesses)
+    sortedFitness = np.sort(fitnesses)
+    if desc:
+        sortedFitness = sortedFitness[::-1]
+    picked = []
+    for i in range(numSelected):
+        picked.append(sortedFitness[i])
+
+    for i in range(len(picked)):
+        picked[i] = fitnessCopy.index(picked[i])
     return picked
 
 def crossover(gene1, gene2):
@@ -140,23 +154,11 @@ def select2(from_here):
 
     return aIndex, bIndex
 
-def pathPrint(path, cities):
-    mpX = []
-    mpY = []
-    for visited in path:
-        mpX.append(cities[visited].x)
-        mpY.append(cities[visited].y)
-        
-    mpX.append(cities[path[0]].x)
-    mpY.append(cities[path[0]].y)
-    print(mpX)
-    print(mpY)
-    plt.plot(mpX, mpY)
-    plt.show()
+    
 
         
 
-def main():
+def main(maxits = 100):
 
     #USER DEFINED VARIABLES
     popSize = 10
@@ -171,7 +173,10 @@ def main():
     #---------------------------------------------------------------------------
     #                           INITIALIZATION
     #---------------------------------------------------------------------------
+    
+    
     cities = TSP(numCities)
+    bestFitnessSoFar = 0
 
     #Generate a starting population - Each gene is a different path
     population = np.meshgrid(range(numCities), range(popSize))[0]
@@ -179,34 +184,72 @@ def main():
         #Shuffle values so we get random paths
         np.random.shuffle(j)
 
+    numLottoWinners = round2(lottery_win_percent*len(population))
+
+
+    its = 0
+    while its < maxits:
+
+        fitnesses = fitnessVector(population, cities.cities)
+
+        #-----------------------------------------------------------------------
+        #                                SELECTION
+        #-----------------------------------------------------------------------
+        winners = selection(fitnesses, numLottoWinners)
+
+
+        if(max(fitnesses) > bestFitnessSoFar):
+            bestFitnessSoFar = max(fitnesses)
+            bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
+
+
+        
+
+        
+        #-----------------------------------------------------------------------
+        #                                REPRODUCTION
+        #-----------------------------------------------------------------------
+        winnersCpy = deepcopy(winners)
+        parentOrder = []
+        while len(winnersCpy) > 0:
+            parentA, parentB = select2(winnersCpy)
+            parentOrder.append(parentA)
+            parentOrder.append(parentB)
+            winnersCpy.pop(parentA)
+            winnersCpy.pop(parentB)
+        
+        children = []
+        for i in range(0, len(parentOrder), 2):
+            diceroll = ran()
+            if diceroll < repr_chance:
+                children.append(crossover(parentA, parentB))
+            else:
+                pass
+        
+        if len(children) > 0:
+            weakest = selectfirst(fitnesses, len(children))
+
+            for i, item in enumerate(weakest):
+                #Replace weakest in the population with children
+                population[item] = children[i]
+
+        #-----------------------------------------------------------------------
+        #                                MUTATION
+        #-----------------------------------------------------------------------
+        
+        for i in range(len(population)):
+            diceroll = ran()
+            if diceroll < mutation_chance:
+                mutation(population[i])
+                
+
+    #FINAL LOOP
     fitnesses = fitnessVector(population, cities.cities)
 
-    numLottoWinners = round2(lottery_win_percent*popSize)
+    if(max(fitnesses) > bestFitnessSoFar):
+            bestFitnessSoFar = max(fitnesses)
+            bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
 
-    #---------------------------------------------------------------------------
-    #                                SELECTION
-    #---------------------------------------------------------------------------
-    winners = selection(fitnesses, numLottoWinners)
-
-
-    #---------------------------------------------------------------------------
-    #                                REPRODUCTION
-    #---------------------------------------------------------------------------
-    winnersCpy = deepcopy(winners)
-    parentOrder = []
-    while len(winnersCpy) > 0:
-        parentA, parentB = select2(winners)
-        parentOrder.append(parentA)
-        parentOrder.append(parentB)
-        winnersCpy.pop(parentA)
-        winnersCpy.pop(parentB)
-
-
-
-
-    #---------------------------------------------------------------------------
-    #                                MUTATION
-    #---------------------------------------------------------------------------
     
 
     
