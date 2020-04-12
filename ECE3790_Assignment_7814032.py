@@ -72,7 +72,7 @@ def fitnessVector(pop, cities):
     return fitnesses
         
 
-def selection(fitnesses, numSelected, maxits=100):
+def selection(fitnesses, numSelected, maxits=100, asc=False):
     #Selection method for genetic algorithms
     # Creates cumulative distribution of all fitnesses and selects
     # random genes out of this distribution.
@@ -81,6 +81,7 @@ def selection(fitnesses, numSelected, maxits=100):
     fitnessCopy = deepcopy(fitnesses)
     sortedFitness = (np.sort(fitnesses)[::-1])
     fitnesscdf = np.cumsum(sortedFitness / np.sum(sortedFitness))
+
     picked = []
     it = 0 #Keep track of number of iterations
     while(len(picked) < numSelected and it < maxits):
@@ -93,12 +94,18 @@ def selection(fitnesses, numSelected, maxits=100):
         if j not in picked:
             picked.append(j)
     
+    if(asc):
+        #If chosen in ascending order, reverse the picked order
+        #Used in picking of which children are to die off.
+        #TODO: Implement this into line 320-330
+        for i in range(len(picked)):
+            picked[i] = len(fitnesscdf) - picked[i]
+
     for i in range(len(picked)):
         for count, k in enumerate(fitnessCopy):
             if k == sortedFitness[picked[i]]:
                 picked[i] = count
                 break
-        #picked[i] = list(fitnessCopy).index(sortedFitness[picked[i]])
     
     return picked
 
