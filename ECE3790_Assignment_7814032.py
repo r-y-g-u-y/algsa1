@@ -104,15 +104,6 @@ def selection(fitnesses, numSelected, maxits=100):
 
 def selectfirst(fitnesses, numSelected, desc=False):
 
-#    '''TODO: Figure out why I'm getting THIS error:
-#    File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 267, in main
-#    weakest = selectfirst(fitnesses, len(children))
-#  File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 100, in selectfirst
-#    picked[i] =  list(fitnessCopy).index(sortedFitness[picked[i]])
-#IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices
-#'''
-
-#That will be the key to solving life's mysteries...
 
 
     fitnessCopy = list(deepcopy(fitnesses))
@@ -210,14 +201,14 @@ def select2(from_here):
 def main(maxits = 100):
 
     #USER DEFINED VARIABLES
-    popSize = 20
+    popSize = 50
     numCities = 10
     
     
-    repr_chance = 0.5 #Chance to reproduce
-    mutation_chance = 0.4 #Chance for a gene to mutate
+    repr_chance = 0.3 #Chance to reproduce
+    mutation_chance = 0.8 #Chance for a gene to mutate
 
-    lottery_win_percent = 0.2 #Percentage of genes which will win the 'lottery'
+    lottery_win_percent = 0.4 #Percentage of genes which will win the 'lottery'
 
     #---------------------------------------------------------------------------
     #                           INITIALIZATION
@@ -246,16 +237,20 @@ def main(maxits = 100):
 
         fitnesses = fitnessVector(population, cities.cities)
 
-        #-----------------------------------------------------------------------
-        #                                SELECTION
-        #-----------------------------------------------------------------------
-        winners = selection(fitnesses, numLottoWinners)
-
-
-
+        bestPathCurrently = deepcopy(population[list(fitnesses).index(max(fitnesses))])
+        bestFitnessCurrently = max(fitnesses)
+        
         xplot = []
         yplot = []
-        if(max(fitnesses) > bestFitnessSoFar):
+
+        for i in bestPathCurrently:
+            xplot.append(cities.cities[i].x)
+            yplot.append(cities.cities[i].y)
+            
+        xplot.append(xplot[0])
+        yplot.append(yplot[0])
+
+        if(bestFitnessCurrently> bestFitnessSoFar):
             bestFitnessSoFar = max(fitnesses)
             bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
             xbest = []
@@ -266,27 +261,25 @@ def main(maxits = 100):
             xbest.append(xbest[0])
             ybest.append(ybest[0]) 
 
-        bestPathCurrently = deepcopy(population[list(fitnesses).index(max(fitnesses))])
-        
-        
-        for i in bestPathCurrently:
-            xplot.append(cities.cities[i].x)
-            yplot.append(cities.cities[i].y)
-            
-        xplot.append(xplot[0])
-        yplot.append(yplot[0])
-
-        
-
         ax1.cla()
         ax2.cla()
         ax1.plot(xplot, yplot)
-        ax2.plot(xplot, yplot)
+        ax2.plot(xbest, ybest)
         ax1.set_title("Best at current iteration")
         ax2.set_title("Best overall iteration")
         fig.suptitle("Iteration Number " + str(its))
         plt.draw()
         plt.pause(0.005)
+
+
+        #-----------------------------------------------------------------------
+        #                                SELECTION
+        #-----------------------------------------------------------------------
+        winners = selection(fitnesses, numLottoWinners)
+
+
+
+        
 
         #-----------------------------------------------------------------------
         #                                REPRODUCTION
