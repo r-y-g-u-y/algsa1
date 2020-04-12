@@ -13,7 +13,18 @@ from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
+def uni(arr):
+    return len(np.unique(arr)) == len(arr)
 
+def idiot(pop):
+    print('\tIDIOT CHECK')
+    flagged = []
+    for i in range(len(pop)):
+        if not uni(pop[i]):
+            flagged.append(i)
+    if len(flagged) > 0:
+        for i in flagged:
+            print("Row %d is Not unique" % (i))
 
 class City:
     def __init__(self, x, y):
@@ -83,19 +94,23 @@ def selection(fitnesses, numSelected, maxits=100):
             picked.append(j)
     
     for i in range(len(picked)):
-        picked[i] = list(fitnessCopy).index(sortedFitness[picked[i]])
+        for count, k in enumerate(fitnessCopy):
+            if k == sortedFitness[picked[i]]:
+                picked[i] = count
+                break
+        #picked[i] = list(fitnessCopy).index(sortedFitness[picked[i]])
     
     return picked
 
 def selectfirst(fitnesses, numSelected, desc=False):
 
-    '''TODO: Figure out why I'm getting THIS error:
-    File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 267, in main
-    weakest = selectfirst(fitnesses, len(children))
-  File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 100, in selectfirst
-    picked[i] =  list(fitnessCopy).index(sortedFitness[picked[i]])
-IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices
-'''
+#    '''TODO: Figure out why I'm getting THIS error:
+#    File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 267, in main
+#    weakest = selectfirst(fitnesses, len(children))
+#  File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 100, in selectfirst
+#    picked[i] =  list(fitnessCopy).index(sortedFitness[picked[i]])
+#IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices
+#'''
 
 #That will be the key to solving life's mysteries...
 
@@ -106,14 +121,30 @@ IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`
         sortedFitness = sortedFitness[::-1]
     picked = []
     for i in range(numSelected):
-        picked.append(sortedFitness[i])
+        picked.append(i)
+
 
     for i in range(len(picked)):
-        picked[i] =  fitnessCopy.index(sortedFitness[picked[i]])
+        for count, k in enumerate(fitnessCopy):
+            if k == sortedFitness[picked[i]]:
+                picked[i] = count
+                break
+    # for i in range(len(picked)):
+    #     picked[i] =  fitnessCopy.index(sortedFitness[picked[i]])
     return picked
 
 def crossover(gene1, gene2):
     #Performs gene crossover using Order 1 permutation crossover
+    clone=True
+    for i in range(len(gene1)):
+        if gene1[i] != gene2[i]:
+            clone = False
+            break
+    if clone:
+        return gene1
+        
+    maxit = 100 #Maximum iterations
+
     child = np.zeros(len(gene1))
     startpoint = np.random.randint(0, len(child)-1)
     endpoint = np.random.randint(startpoint+1, len(child))
@@ -132,13 +163,15 @@ def crossover(gene1, gene2):
                     break
     
     i1 = endpoint
-    while i1 < len(child):
+    while i1 < len(child) and not uni(child):
         #Append values of gene 2 not found in child in order in which they
         # appear in gene 2 AFTER the endpoint
         for j in gene2:
             if j not in child:
                 child[i1] = j
                 i1 += 1
+                if i1 >= len(child)-1:
+                    break
     return child
 
 def round2(x):
@@ -177,14 +210,14 @@ def select2(from_here):
 def main(maxits = 100):
 
     #USER DEFINED VARIABLES
-    popSize = 10
-    numCities = 5
+    popSize = 20
+    numCities = 10
     
     
     repr_chance = 0.5 #Chance to reproduce
-    mutation_chance = 0.2 #Chance for a gene to mutate
+    mutation_chance = 0.4 #Chance for a gene to mutate
 
-    lottery_win_percent = 0.3 #Percentage of genes which will win the 'lottery'
+    lottery_win_percent = 0.2 #Percentage of genes which will win the 'lottery'
 
     #---------------------------------------------------------------------------
     #                           INITIALIZATION
@@ -202,11 +235,14 @@ def main(maxits = 100):
 
     numLottoWinners = round2(lottery_win_percent*len(population))
 
+    idiot(population)
+
     xbest = []
     ybest = []
 
     its = 0
     while its < maxits:
+        its += 1
 
         fitnesses = fitnessVector(population, cities.cities)
 
@@ -227,6 +263,8 @@ def main(maxits = 100):
             for i in bestPathSoFar:
                 xbest.append(cities.cities[i].x)
                 ybest.append(cities.cities[i].y)
+            xbest.append(xbest[0])
+            ybest.append(ybest[0]) 
 
         bestPathCurrently = deepcopy(population[list(fitnesses).index(max(fitnesses))])
         
@@ -235,11 +273,10 @@ def main(maxits = 100):
             xplot.append(cities.cities[i].x)
             yplot.append(cities.cities[i].y)
             
-        np.append(xplot, xplot[0])
-        np.append(yplot, yplot[0])
+        xplot.append(xplot[0])
+        yplot.append(yplot[0])
 
-        np.append(xbest, xbest[0])
-        np.append(ybest, ybest[0]) 
+        
 
         ax1.cla()
         ax2.cla()
@@ -247,6 +284,8 @@ def main(maxits = 100):
         ax2.plot(xplot, yplot)
         ax1.set_title("Best at current iteration")
         ax2.set_title("Best overall iteration")
+        fig.suptitle("Iteration Number " + str(its))
+        plt.draw()
         plt.pause(0.005)
 
         #-----------------------------------------------------------------------
@@ -265,16 +304,18 @@ def main(maxits = 100):
                 winnersCpy.pop(parentB)
                 winnersCpy.pop(parentA)
             
+        idiot(population)
         
         children = []
         for i in range(0, len(parentOrder), 2):
             diceroll = ran()
             if diceroll < repr_chance:
                 children.append(crossover(population[parentA], population[parentB]))
-                print("hello")
+                print("helloo")
             else:
                 pass
         
+        idiot(population)
         if len(children) > 0:
             weakest = selectfirst(fitnesses, len(children))
             print("hello2)")
@@ -291,7 +332,7 @@ def main(maxits = 100):
             diceroll = ran()
             if diceroll < mutation_chance:
                 mutation(population[i])
-                
+        idiot(population)
 
     #FINAL LOOP
     fitnesses = fitnessVector(population, cities.cities)
@@ -300,8 +341,17 @@ def main(maxits = 100):
             bestFitnessSoFar = max(fitnesses)
             bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
 
+    print("Final Stats:")
+    print("Number of iterations:")
+    print("Best fitness at current iteration: %f" %(max(fitnesses)))
+    print("Best fitness overall: \t\t%f" %(bestFitnessSoFar))
+    print("Shortest path using best fitness: %f" %(1/bestFitnessSoFar))
+
+
     
 
     
 main()
+print("DONE")
+
 plt.show()
