@@ -4,7 +4,6 @@ ECE 3790    -   ASSIGNMENT 1
 Completed by Ryan Bate 7814032
 '''
 
-#if it ain't broke, don't fix it
 
 from numpy.random import random_sample as ran
 import numpy as np
