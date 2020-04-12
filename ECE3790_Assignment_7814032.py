@@ -21,7 +21,7 @@ class City:
         self.y = y
 
 class TSP:
-    def __init__(self, n, predefinedMap=None):
+    def __init__(self, n, popSize=10, predefinedMap=None):
         #Overall Problem constructor.
         # If predefinedMap is not defined then it will create a map using
 
@@ -35,6 +35,7 @@ class TSP:
         else:
             self.cSize = n
             self.cities = []
+            
             for i in range(n):
                 self.cities.append(City(ran(), ran())) #Append a new city with a random location
 
@@ -48,6 +49,14 @@ def fitness(path, cities):
 
     return 1/fitness #Get the inverse since GA is a maximization alg.
 
+def fitnessVector(pop, cities):
+    #Gets vector of all fitnesses in the population, sorted in descending order
+    fitnesses = np.zeros(len(pop))
+    for i in range(len(pop)):
+        fitnesses[i] = fitness(pop[i], cities)
+    
+    return fitnesses
+        
 
 def selection(fitnesses, numSelected, maxits=100):
     #Selection method for genetic algorithms
@@ -55,10 +64,11 @@ def selection(fitnesses, numSelected, maxits=100):
     # random genes out of this distribution.
     # Prevents getting stuck in a loop using default value maxits=100. If loop
     # exceeds this, it will take the sorted values up to when the loop broke.
-    sortedFitness = np.sort(fitnesses)[::-1]
+    fitnessCopy = deepcopy(fitnesses)
+    sortedFitness = (np.sort(fitnesses)[::-1]) + 1
     fitnesscdf = np.cumsum(sortedFitness / np.sum(sortedFitness))
     picked = []
-    it = 0
+    it = 0 #Keep track of number of iterations
     while(len(picked) < numSelected and it < maxits):
         #Pick population to keep based on fitness
         it += 1
@@ -68,7 +78,10 @@ def selection(fitnesses, numSelected, maxits=100):
             j += 1
         if j not in picked:
             picked.append(j)
-            
+    
+    for i in range(len(picked)):
+        picked[i] = fitnessCopy.index(picked[i])
+    
     return picked
 
 def crossover(gene1, gene2):
@@ -98,11 +111,34 @@ def crossover(gene1, gene2):
                 i1 += 1
     return child
 
+def round2(x):
+    return 2 * round(x/2)
 
+def mutation(gene):
+    #Mutates gene by swapping two elements in the array
+    aIndex = np.random.randint(0, len(gene))
+    bIndex = aIndex
 
-def mutation():
-    pass
-            
+    while bIndex == aIndex:
+        #Ensure that the two swap points are not equal
+        bIndex = np.random.randint(0, len(gene))
+
+    #Swap them
+    temp = gene[aIndex]
+    gene[aIndex] = gene[bIndex]
+    gene[bIndex] = temp
+    return gene
+
+def select2(from_here):
+    assert len(from_here) >=2
+    aIndex = np.random.randint(0, len(from_here))
+    bIndex = aIndex
+
+    while bIndex == aIndex:
+        #Ensure that the two swap points are not equal
+        bIndex = np.random.randint(0, len(from_here))
+
+    return aIndex, bIndex
 
 def pathPrint(path, cities):
     mpX = []
@@ -121,10 +157,21 @@ def pathPrint(path, cities):
         
 
 def main():
+
+    #USER DEFINED VARIABLES
     popSize = 10
     numCities = 5
-    cities = TSP(numCities)
+    
+    
+    repr_chance = 0.5 #Chance to reproduce
+    mutation_chance = 0.2 #Chance for a gene to mutate
 
+    lottery_win_percent = 0.3 #Percentage of genes which will win the 'lottery'
+
+    #---------------------------------------------------------------------------
+    #                           INITIALIZATION
+    #---------------------------------------------------------------------------
+    cities = TSP(numCities)
 
     #Generate a starting population - Each gene is a different path
     population = np.meshgrid(range(numCities), range(popSize))[0]
@@ -132,16 +179,35 @@ def main():
         #Shuffle values so we get random paths
         np.random.shuffle(j)
 
-    b = np.sort(population[0])[::-1]
-    p = selection(b, 2)
-    print(b)
-    print(p)
-    print("SELECTED:")
-    print(b[p[0]])
-    print(b[p[1]])
-    
+    fitnesses = fitnessVector(population, cities.cities)
+
+    numLottoWinners = round2(lottery_win_percent*popSize)
+
+    #---------------------------------------------------------------------------
+    #                                SELECTION
+    #---------------------------------------------------------------------------
+    winners = selection(fitnesses, numLottoWinners)
+
+
+    #---------------------------------------------------------------------------
+    #                                REPRODUCTION
+    #---------------------------------------------------------------------------
+    winnersCpy = deepcopy(winners)
+    parentOrder = []
+    while len(winnersCpy) > 0:
+        parentA, parentB = select2(winners)
+        parentOrder.append(parentA)
+        parentOrder.append(parentB)
+        winnersCpy.pop(parentA)
+        winnersCpy.pop(parentB)
+
+
+
+
+    #---------------------------------------------------------------------------
+    #                                MUTATION
+    #---------------------------------------------------------------------------
     
 
-    
     
 main()
