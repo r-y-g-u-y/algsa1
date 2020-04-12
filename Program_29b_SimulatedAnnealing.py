@@ -101,7 +101,8 @@ def travelingSalesmanSA(s0, x, y, E, S, maxits, innermaxits):
         ax1.set_title('Best at current iteration',fontsize=11)
         ax2.set_title('Best overall',fontsize=11)
         fig.suptitle(['SA Traveling Salesman Iteration # ',iteration])
-        plt.pause(0.005)
+        plt.pause(0.05)
+        
     
     plt.show()
 

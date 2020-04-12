@@ -43,10 +43,12 @@ class TSP:
 def fitness(path, cities):
     fitness = 0.0
     for i in range(1, len(path)):
-        fitness += m.sqrt(((cities[i].x-cities[i-1].x)**2) + ((cities[i].y-cities[i-1].y)**2))
+        fitness += m.sqrt(((cities[path[i]].x-cities[path[i-1]].x)**2) + 
+                        ((cities[path[i]].y-cities[path[i-1]].y)**2))
 
     #Add the last section of the path to complete the loop
-    fitness +=  m.sqrt(((cities[len(path)].x-cities[0].x)**2) + ((cities[len(path)].y-cities[0].y)**2))
+    fitness +=  m.sqrt(((cities[path[len(path)-1]].x-cities[path[0]].x)**2) + 
+                ((cities[path[len(path)-1]].y-cities[path[0]].y)**2))
 
     return 1/fitness #Get the inverse since GA is a maximization alg.
 
@@ -66,7 +68,7 @@ def selection(fitnesses, numSelected, maxits=100):
     # Prevents getting stuck in a loop using default value maxits=100. If loop
     # exceeds this, it will take the sorted values up to when the loop broke.
     fitnessCopy = deepcopy(fitnesses)
-    sortedFitness = (np.sort(fitnesses)[::-1]) + 1
+    sortedFitness = (np.sort(fitnesses)[::-1])
     fitnesscdf = np.cumsum(sortedFitness / np.sum(sortedFitness))
     picked = []
     it = 0 #Keep track of number of iterations
@@ -81,7 +83,7 @@ def selection(fitnesses, numSelected, maxits=100):
             picked.append(j)
     
     for i in range(len(picked)):
-        picked[i] = fitnessCopy.index(picked[i])
+        picked[i] = list(fitnessCopy).index(sortedFitness[picked[i]])
     
     return picked
 
@@ -95,7 +97,7 @@ def selectfirst(fitnesses, numSelected, desc=False):
         picked.append(sortedFitness[i])
 
     for i in range(len(picked)):
-        picked[i] = fitnessCopy.index(picked[i])
+        picked[i] =  list(fitnessCopy).index(sortedFitness[picked[i]])
     return picked
 
 def crossover(gene1, gene2):
@@ -173,7 +175,7 @@ def main(maxits = 100):
     #---------------------------------------------------------------------------
     #                           INITIALIZATION
     #---------------------------------------------------------------------------
-    
+    fig, ((ax1, ax2)) = plt.subplots(1, 2)
     
     cities = TSP(numCities)
     bestFitnessSoFar = 0
@@ -186,6 +188,8 @@ def main(maxits = 100):
 
     numLottoWinners = round2(lottery_win_percent*len(population))
 
+    xbest = []
+    ybest = []
 
     its = 0
     while its < maxits:
@@ -198,25 +202,55 @@ def main(maxits = 100):
         winners = selection(fitnesses, numLottoWinners)
 
 
+
+        xplot = []
+        yplot = []
         if(max(fitnesses) > bestFitnessSoFar):
             bestFitnessSoFar = max(fitnesses)
             bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
+            xbest = []
+            ybest = []
+            for i in bestPathSoFar:
+                xbest.append(cities.cities[i].x)
+                ybest.append(cities.cities[i].y)
 
-
+        bestPathCurrently = deepcopy(population[list(fitnesses).index(max(fitnesses))])
         
-
         
+        for i in bestPathCurrently:
+            xplot.append(cities.cities[i].x)
+            yplot.append(cities.cities[i].y)
+            
+        np.append(xplot, xplot[0])
+        np.append(yplot, yplot[0])
+
+        np.append(xbest, xbest[0])
+        np.append(ybest, ybest[0]) 
+
+        ax1.cla()
+        ax2.cla()
+        ax1.plot(xplot, yplot)
+        ax2.plot(xplot, yplot)
+        ax1.set_title("Best at current iteration")
+        ax2.set_title("Best overall iteration")
+        plt.pause(0.05)
+
         #-----------------------------------------------------------------------
         #                                REPRODUCTION
         #-----------------------------------------------------------------------
         winnersCpy = deepcopy(winners)
         parentOrder = []
-        while len(winnersCpy) > 0:
+        while len(winnersCpy) > 1:
             parentA, parentB = select2(winnersCpy)
             parentOrder.append(parentA)
             parentOrder.append(parentB)
-            winnersCpy.pop(parentA)
-            winnersCpy.pop(parentB)
+            if(parentA > parentB):
+                winnersCpy.pop(parentA)
+                winnersCpy.pop(parentB)
+            else:
+                winnersCpy.pop(parentB)
+                winnersCpy.pop(parentA)
+            
         
         children = []
         for i in range(0, len(parentOrder), 2):
@@ -254,3 +288,4 @@ def main(maxits = 100):
 
     
 main()
+plt.show()
