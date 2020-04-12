@@ -88,7 +88,19 @@ def selection(fitnesses, numSelected, maxits=100):
     return picked
 
 def selectfirst(fitnesses, numSelected, desc=False):
-    fitnessCopy = deepcopy(fitnesses)
+
+    '''TODO: Figure out why I'm getting THIS error:
+    File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 267, in main
+    weakest = selectfirst(fitnesses, len(children))
+  File "c:\Users\ryanb\Documents\Schoolwork-University\Eng Alg\Assignment 1\ECE3790_Assignment_7814032.py", line 100, in selectfirst
+    picked[i] =  list(fitnessCopy).index(sortedFitness[picked[i]])
+IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices
+'''
+
+#That will be the key to solving life's mysteries...
+
+
+    fitnessCopy = list(deepcopy(fitnesses))
     sortedFitness = np.sort(fitnesses)
     if desc:
         sortedFitness = sortedFitness[::-1]
@@ -97,7 +109,7 @@ def selectfirst(fitnesses, numSelected, desc=False):
         picked.append(sortedFitness[i])
 
     for i in range(len(picked)):
-        picked[i] =  list(fitnessCopy).index(sortedFitness[picked[i]])
+        picked[i] =  fitnessCopy.index(sortedFitness[picked[i]])
     return picked
 
 def crossover(gene1, gene2):
@@ -116,6 +128,8 @@ def crossover(gene1, gene2):
             if j not in child:
                 child[i1] = j
                 i1 += 1
+                if i1 >= startpoint:
+                    break
     
     i1 = endpoint
     while i1 < len(child):
@@ -233,7 +247,7 @@ def main(maxits = 100):
         ax2.plot(xplot, yplot)
         ax1.set_title("Best at current iteration")
         ax2.set_title("Best overall iteration")
-        plt.pause(0.05)
+        plt.pause(0.005)
 
         #-----------------------------------------------------------------------
         #                                REPRODUCTION
@@ -256,12 +270,14 @@ def main(maxits = 100):
         for i in range(0, len(parentOrder), 2):
             diceroll = ran()
             if diceroll < repr_chance:
-                children.append(crossover(parentA, parentB))
+                children.append(crossover(population[parentA], population[parentB]))
+                print("hello")
             else:
                 pass
         
         if len(children) > 0:
             weakest = selectfirst(fitnesses, len(children))
+            print("hello2)")
 
             for i, item in enumerate(weakest):
                 #Replace weakest in the population with children
