@@ -4,7 +4,6 @@ ECE 3790    -   ASSIGNMENT 1
 Completed by Ryan Bate 7814032
 '''
 
-
 from numpy.random import random_sample as ran
 import numpy as np
 import math as m
@@ -14,8 +13,6 @@ import matplotlib.pyplot as plt
 def uni(arr):
     #Checks if array is unique (doesn't have duplicate values)
     return len(np.unique(arr)) == len(arr)
-
-
 
 class City:
     #City class
@@ -72,7 +69,6 @@ def fitnessVector(pop, cities):
         fitnesses[i] = fitness(pop[i], cities)
     
     return fitnesses
-        
 
 def selection(fitnesses, numSelected, maxits=100, asc=False):
     #Selection method for genetic algorithms
@@ -114,7 +110,6 @@ def selection(fitnesses, numSelected, maxits=100, asc=False):
     
     return picked
 
-
 def crossover(gene1, gene2):
     #Performs gene crossover using Order 1 permutation crossover
     #
@@ -130,7 +125,6 @@ def crossover(gene1, gene2):
             break
     if clone:
         return gene1
-        
 
     child = np.zeros(len(gene1))
 
@@ -216,7 +210,6 @@ def randomeval(citySpace, maxits=100):
     return bestFitness, bestPath
 
 
-
 def main(maxits = 200):
     #Main method
     # Everything in user-defined variables is modifiable.
@@ -244,7 +237,6 @@ def main(maxits = 200):
     cities = TSP(numCities, popSize, True, x, y) #Uncomment to use test function
    # cities = TSP(numCities, popSize) #Uncomment to use randomization
 
-
     repr_chance = 0.5 #Chance to reproduce
     mutation_chance = .5 #Chance for a gene to mutate
     mutation_strength = 1 #How many times does something have the chance to mutate
@@ -256,9 +248,9 @@ def main(maxits = 200):
     #---------------------------------------------------------------------------
     #                           INITIALIZATION
     #---------------------------------------------------------------------------
-    fig, ((ax1, ax2)) = plt.subplots(1, 2)
+    fig, ((ax1, ax2)) = plt.subplots(1, 2) #Create figures and subplots
     
-    
+    #Best fitness generated so far
     bestFitnessSoFar = 0
 
     #Generate a starting population - Each gene is a different path
@@ -271,42 +263,50 @@ def main(maxits = 200):
     # parents of children.
     numLottoWinners = round2(lottery_win_percent*len(population))
 
-    
-
+    #Plotting list initialization
     xbest = []
     ybest = []
 
-    its = 0
-    while its < maxits:
-        its += 1
+    _its = 0
+    #Main loop
+    while _its < maxits:
+        _its += 1
 
+        #Calculate all fitnesses
         fitnesses = fitnessVector(population, cities.cities)
 
+        #Determine current best path and fitness
         bestPathCurrently = deepcopy(population[list(fitnesses).index(max(fitnesses))])
         bestFitnessCurrently = max(fitnesses)
         
-        xplot = []
+        xplot = []#Initialize / empty the plotting variables
         yplot = []
 
         for i in bestPathCurrently:
+            #Append city x and y coordinates to the plotting lists
             xplot.append(cities.cities[i].x)
             yplot.append(cities.cities[i].y)
             
+        #Append first city location to end of the list (to create the loop)
         xplot.append(xplot[0])
         yplot.append(yplot[0])
 
         if(bestFitnessCurrently> bestFitnessSoFar):
+            #Keep track of best fitness and path so far
             bestFitnessSoFar = max(fitnesses)
             bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
             xbest = []
             ybest = []
             for i in bestPathSoFar:
+                 #Append city x and y coordinates to the plotting lists
                 xbest.append(cities.cities[i].x)
                 ybest.append(cities.cities[i].y)
+            #Append first city location to end of the list (to create the loop)
             xbest.append(xbest[0])
             ybest.append(ybest[0]) 
 
         if(plotting):
+            #Plot values if plotting is enabled
             ax1.cla()
             ax2.cla()
             ax1.plot(xplot, yplot)
@@ -317,26 +317,29 @@ def main(maxits = 200):
             plt.draw()
             plt.pause(0.001)
 
-
         #-----------------------------------------------------------------------
         #                                SELECTION
         #-----------------------------------------------------------------------
+        #Select using selection function
         winners = selection(fitnesses, numLottoWinners)
-
-
-
-        
 
         #-----------------------------------------------------------------------
         #                                REPRODUCTION
         #-----------------------------------------------------------------------
         winnersCpy = deepcopy(winners)
-        parentOrder = []
+        parentOrder = [] #Parent order is order of indices of parents
+        #Mating / reproduction process
         while len(winnersCpy) > 1:
+            #Select two parents to mate
             parentA, parentB = select2(winnersCpy)
+
+            #Create order for parents to reproduce in
             parentOrder.append(parentA)
             parentOrder.append(parentB)
+
             if(parentA > parentB):
+                #Pop in order from greatest to least to preserve ordering in 
+                #winnersCpy
                 winnersCpy.pop(parentA)
                 winnersCpy.pop(parentB)
             else:
@@ -348,12 +351,14 @@ def main(maxits = 200):
         for i in range(0, len(parentOrder), 2):
             diceroll = ran()
             if diceroll < repr_chance:
-                children.append(crossover(population[parentA], population[parentB]))
+                #If diceroll lands inside repr chance, then reproduce.
+                children.append(crossover(population[parentOrder[i]], population[parentOrder[i+1]]))
             else:
                 pass
         
 
         if len(children) > 0:
+            #Select weakest using same selection function but reverse-ordered
             weakest = selection(fitnesses, len(children), asc=True)
 
             for i, item in enumerate(weakest):
@@ -366,21 +371,26 @@ def main(maxits = 200):
             for i in range(len(population)):
                 diceroll = ran()
                 if diceroll < mutation_chance:
+                    #If mutation lands in diceroll, then proceed with mutation
+                    # provided other criteria are met
                     if len(children) > 0 and (not ((children_vaccinated ) and (any(np.equal(children, population[i]).all(1))))): 
                     #Can choose to allow for children not to mutate
                         mutation(population[i])
                     elif len(children)==0:
                         mutation(population[i])
-                    
-
     #FINAL LOOP
+    #Calculate final fitnesses
     fitnesses = fitnessVector(population, cities.cities)
 
+    #Calculate final best fitness and path
     if(max(fitnesses) > bestFitnessSoFar):
             bestFitnessSoFar = max(fitnesses)
             bestPathSoFar = deepcopy(population[list(fitnesses).index(max(fitnesses))])
 
+    #Evaulate random TSP 'solving' function
     rFitness, rPath = randomeval(cities.cities)
+
+    #Print final results
     print("Final Stats:")
     print("Number of iterations:")
     print("Best fitness at current iteration:  %f" %(max(fitnesses)))
@@ -389,12 +399,8 @@ def main(maxits = 200):
     print("\nBest Random fitness: \t\t    %f" %(rFitness))
     print("Shortest Path using Random Fitness:%f" %(1/rFitness))
 
-
     if(plotting):
         plt.show()
     
-
-    
 main()
 print("DONE")
-
